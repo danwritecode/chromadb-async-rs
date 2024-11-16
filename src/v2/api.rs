@@ -41,23 +41,23 @@ impl APIClientAsync {
         }
     }
 
-    pub async fn post(&self, path: &str, json_body: Option<Value>) -> Result<Response> {
+    pub async fn post(&self, path: String, json_body: Option<Value>) -> Result<Response> {
         self.send_request(Method::POST, path, json_body).await
     }
 
-    pub async fn get(&self, path: &str) -> Result<Response> {
+    pub async fn get(&self, path: String) -> Result<Response> {
         self.send_request(Method::GET, path, None).await
     }
 
-    pub async fn put(&self, path: &str, json_body: Option<Value>) -> Result<Response> {
+    pub async fn put(&self, path: String, json_body: Option<Value>) -> Result<Response> {
         self.send_request(Method::PUT, path, json_body).await
     }
 
-    pub async fn delete(&self, path: &str) -> Result<Response> {
+    pub async fn delete(&self, path: String) -> Result<Response> {
         self.send_request(Method::DELETE, path, None).await
     }
 
-    async fn send_request(&self, method: Method, path: &str, json_body: Option<Value>) -> Result<Response> {
+    async fn send_request(&self, method: Method, path: String, json_body: Option<Value>) -> Result<Response> {
         let url = format!("{}{}", self.api_endpoint, path);
         
         let mut request = self.client

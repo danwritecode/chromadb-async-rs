@@ -102,7 +102,7 @@ mod tests {
 
         let client = ChromaClient::new(Default::default());
         let collection = client
-            .get_or_create_collection("open-ai-test-collection", None)
+            .get_or_create_collection("open-ai-test-collection".to_string(), None)
             .await
             .unwrap();
         let openai_embeddings = OpenAIEmbeddings::new(Default::default());

@@ -21,24 +21,24 @@ pub struct ChromaCollection {
 
 impl ChromaCollection {
     /// Get the UUID of the collection.
-    pub fn id(&self) -> &str {
-        self.id.as_ref()
+    pub fn id(&self) -> String {
+        self.id.clone()
     }
 
     /// Get the name of the collection.
-    pub fn name(&self) -> &str {
-        self.name.as_ref()
+    pub fn name(&self) -> String {
+        self.name.clone()
     }
 
     /// Get the metadata of the collection.
-    pub fn metadata(&self) -> Option<&Metadata> {
-        self.metadata.as_ref()
+    pub fn metadata(&self) -> Option<Metadata> {
+        self.metadata.clone()
     }
 
     /// The total number of embeddings added to the database.
     pub async fn count(&self) -> Result<usize> {
         let path = format!("/collections/{}/count", self.id);
-        let response = self.api.get(&path).await?;
+        let response = self.api.get(path).await?;
         let count = response.json::<usize>().await?;
         Ok(count)
     }
@@ -53,13 +53,13 @@ impl ChromaCollection {
     /// # Errors
     ///
     /// * If the collection name is invalid
-    pub async fn modify(&self, name: Option<&str>, metadata: Option<&Metadata>) -> Result<()> {
+    pub async fn modify(&self, name: Option<String>, metadata: Option<Metadata>) -> Result<()> {
         let json_body = json!({
             "new_name": name,
             "new_metadata": metadata,
         });
         let path = format!("/collections/{}", self.id);
-        self.api.put(&path, Some(json_body)).await?;
+        self.api.put(path, Some(json_body)).await?;
         Ok(())
     }
 
@@ -104,7 +104,7 @@ impl ChromaCollection {
         });
 
         let path = format!("/collections/{}/add", self.id);
-        let response = self.api.post(&path, Some(json_body)).await?;
+        let response = self.api.post(path, Some(json_body)).await?;
         let response = response.json::<Value>().await?;
 
         Ok(response)
@@ -151,7 +151,7 @@ impl ChromaCollection {
         });
 
         let path = format!("/collections/{}/upsert", self.id);
-        let response = self.api.post(&path, Some(json_body)).await?;
+        let response = self.api.post(path, Some(json_body)).await?;
         let response = response.json::<Value>().await?;
 
         Ok(response)
@@ -192,7 +192,7 @@ impl ChromaCollection {
             .retain(|_, v| !v.is_null());
 
         let path = format!("/collections/{}/get", self.id);
-        let response = self.api.post(&path, Some(json_body)).await?;
+        let response = self.api.post(path, Some(json_body)).await?;
         let get_result = response.json::<GetResult>().await?;
         Ok(get_result)
     }
@@ -237,7 +237,7 @@ impl ChromaCollection {
         });
 
         let path = format!("/collections/{}/update", self.id);
-        let response = self.api.post(&path, Some(json_body)).await?;
+        let response = self.api.post(path, Some(json_body)).await?;
 
         match response.error_for_status() {
             Ok(_) => Ok(()),
@@ -306,7 +306,7 @@ impl ChromaCollection {
             .retain(|_, v| !v.is_null());
 
         let path = format!("/collections/{}/query", self.id);
-        let response = self.api.post(&path, Some(json_body)).await?;
+        let response = self.api.post(path, Some(json_body)).await?;
         let query_result = response.json::<QueryResult>().await?;
         Ok(query_result)
     }
@@ -339,7 +339,7 @@ impl ChromaCollection {
     ///
     pub async fn delete(
         &self,
-        ids: Option<Vec<&str>>,
+        ids: Option<Vec<String>>,
         where_metadata: Option<Value>,
         where_document: Option<Value>,
     ) -> Result<()> {
@@ -350,7 +350,7 @@ impl ChromaCollection {
         });
 
         let path = format!("/collections/{}/delete", self.id);
-        let response = self.api.post(&path, Some(json_body)).await?;
+        let response = self.api.post(path, Some(json_body)).await?;
 
         match response.error_for_status() {
             Ok(_) => Ok(()),
@@ -488,13 +488,13 @@ mod tests {
         let client = ChromaClient::new(Default::default());
 
         let collection = client
-            .get_or_create_collection(TEST_COLLECTION, None)
+            .get_or_create_collection(TEST_COLLECTION.to_string(), None)
             .await
             .unwrap();
 
         //Test for setting invalid collection name. Should fail.
         assert!(collection
-            .modify(Some("new name for test collection"), None)
+            .modify(Some("new name for test collection".to_string()), None)
             .await
             .is_err());
 
@@ -508,6 +508,7 @@ mod tests {
                     })
                     .as_object()
                     .unwrap()
+                    .clone()
                 )
             )
             .await
@@ -519,7 +520,7 @@ mod tests {
         let client = ChromaClient::new(Default::default());
 
         let collection = client
-            .get_or_create_collection(TEST_COLLECTION, None)
+            .get_or_create_collection(TEST_COLLECTION.to_string(), None)
             .await
             .unwrap();
 
@@ -641,7 +642,7 @@ mod tests {
         let client = ChromaClient::new(Default::default());
 
         let collection = client
-            .get_or_create_collection(TEST_COLLECTION, None)
+            .get_or_create_collection(TEST_COLLECTION.to_string(), None)
             .await
             .unwrap();
 
@@ -763,7 +764,7 @@ mod tests {
         let client = ChromaClient::new(Default::default());
 
         let collection = client
-            .get_or_create_collection(TEST_COLLECTION, None)
+            .get_or_create_collection(TEST_COLLECTION.to_string(), None)
             .await
             .unwrap();
 
@@ -888,7 +889,7 @@ mod tests {
         let client = ChromaClient::new(Default::default());
 
         let collection = client
-            .get_or_create_collection(TEST_COLLECTION, None)
+            .get_or_create_collection(TEST_COLLECTION.to_string(), None)
             .await
             .unwrap();
         assert!(collection.count().await.is_ok());
@@ -961,7 +962,7 @@ mod tests {
         let client = ChromaClient::new(Default::default());
 
         let collection = client
-            .get_or_create_collection(TEST_COLLECTION, None)
+            .get_or_create_collection(TEST_COLLECTION.to_string(), None)
             .await
             .unwrap();
 
@@ -980,7 +981,7 @@ mod tests {
         );
         assert!(response.await.is_ok());
 
-        let response = collection.delete(Some(vec!["123ABC"]), None, None).await;
+        let response = collection.delete(Some(vec!["123ABC".to_string()]), None, None).await;
 
         assert!(
             response.is_ok(),

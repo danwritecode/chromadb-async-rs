@@ -53,7 +53,7 @@ impl ChromaClient {
     /// * If the collection name is invalid
     pub async fn create_collection(
         &self,
-        name: &str,
+        name: String,
         metadata: Option<Metadata>,
         get_or_create: bool,
     ) -> Result<ChromaCollection> {
@@ -62,7 +62,7 @@ impl ChromaClient {
             "metadata": metadata,
             "get_or_create": get_or_create,
         });
-        let response = self.api.post("/collections", Some(request_body)).await?;
+        let response = self.api.post("/collections".to_string(), Some(request_body)).await?;
         let mut collection = response.json::<ChromaCollection>().await?;
         collection.api = self.api.clone();
         Ok(collection)
@@ -80,7 +80,7 @@ impl ChromaClient {
     /// * If the collection name is invalid
     pub async fn get_or_create_collection(
         &self,
-        name: &str,
+        name: String,
         metadata: Option<Metadata>,
     ) -> Result<ChromaCollection> {
         self.create_collection(name, metadata, true).await
@@ -88,7 +88,7 @@ impl ChromaClient {
 
     /// List all collections
     pub async fn list_collections(&self) -> Result<Vec<ChromaCollection>> {
-        let response = self.api.get("/collections").await?;
+        let response = self.api.get("/collections".to_string()).await?;
         let collections = response.json::<Vec<ChromaCollection>>().await?;
         let collections = collections
             .into_iter()
@@ -110,8 +110,8 @@ impl ChromaClient {
     ///
     /// * If the collection name is invalid
     /// * If the collection does not exist
-    pub async fn get_collection(&self, name: &str) -> Result<ChromaCollection> {
-        let response = self.api.get(&format!("/collections/{}", name)).await?;
+    pub async fn get_collection(&self, name: String) -> Result<ChromaCollection> {
+        let response = self.api.get(format!("/collections/{}", name)).await?;
         let mut collection = response.json::<ChromaCollection>().await?;
         collection.api = self.api.clone();
         Ok(collection)
@@ -127,28 +127,28 @@ impl ChromaClient {
     ///
     /// * If the collection name is invalid
     /// * If the collection does not exist
-    pub async fn delete_collection(&self, name: &str) -> Result<()> {
-        self.api.delete(&format!("/collections/{}", name)).await?;
+    pub async fn delete_collection(&self, name: String) -> Result<()> {
+        self.api.delete(format!("/collections/{}", name)).await?;
         Ok(())
     }
 
     /// Resets the database. This will delete all collections and entries.
     pub async fn reset(&self) -> Result<bool> {
-        let respones = self.api.post("/reset", None).await?;
+        let respones = self.api.post("/reset".to_string(), None).await?;
         let result = respones.json::<bool>().await?;
         Ok(result)
     }
 
     /// The version of Chroma
     pub async fn version(&self) -> Result<String> {
-        let response = self.api.get("/version").await?;
+        let response = self.api.get("/version".to_string()).await?;
         let version = response.json::<String>().await?;
         Ok(version)
     }
 
     /// Get the current time in nanoseconds since epoch. Used to check if the server is alive.
     pub async fn heartbeat(&self) -> Result<u64> {
-        let response = self.api.get("/heartbeat").await?;
+        let response = self.api.get("/heartbeat".to_string()).await?;
         let json = response.json::<HeartbeatResponse>().await?;
         Ok(json.heartbeat)
     }
@@ -199,7 +199,7 @@ mod tests {
         let client: ChromaClient = ChromaClient::new(Default::default());
 
         let result = client
-            .create_collection(TEST_COLLECTION, None, true)
+            .create_collection(TEST_COLLECTION.to_string(), None, true)
             .await
             .unwrap();
         assert_eq!(result.name(), TEST_COLLECTION);
@@ -212,11 +212,11 @@ mod tests {
         const GET_TEST_COLLECTION: &str = "100-recipes-for-octopus";
 
         client
-            .create_collection(GET_TEST_COLLECTION, None, true)
+            .create_collection(GET_TEST_COLLECTION.to_string(), None, true)
             .await
             .unwrap();
 
-        let collection = client.get_collection(GET_TEST_COLLECTION).await.unwrap();
+        let collection = client.get_collection(GET_TEST_COLLECTION.to_string()).await.unwrap();
         assert_eq!(collection.name(), GET_TEST_COLLECTION);
     }
 
@@ -234,14 +234,14 @@ mod tests {
 
         const DELETE_TEST_COLLECTION: &str = "6-recipies-for-octopus";
         client
-            .get_or_create_collection(DELETE_TEST_COLLECTION, None)
+            .get_or_create_collection(DELETE_TEST_COLLECTION.to_string(), None)
             .await
             .unwrap();
 
-        let collection = client.delete_collection(DELETE_TEST_COLLECTION).await;
+        let collection = client.delete_collection(DELETE_TEST_COLLECTION.to_string()).await;
         assert!(collection.is_ok());
 
-        let collection = client.delete_collection(DELETE_TEST_COLLECTION).await;
+        let collection = client.delete_collection(DELETE_TEST_COLLECTION.to_string()).await;
         assert!(collection.is_err());
     }
 }

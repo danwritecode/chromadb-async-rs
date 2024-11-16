@@ -3,7 +3,7 @@ use crate::v2::commons::{Embedding, Result};
 pub use rust_bert::pipelines::sentence_embeddings::*;
 
 impl EmbeddingFunction for SentenceEmbeddingsModel {
-    fn embed(&self, docs: &[&str]) -> Result<Vec<Embedding>> {
+    fn embed(&self, docs: &[String]) -> Result<Vec<Embedding>> {
         Ok(self.encode(docs)?)
     }
 }
