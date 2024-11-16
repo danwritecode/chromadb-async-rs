@@ -2,11 +2,11 @@ use super::commons::Embedding;
 use anyhow::Result;
 use async_trait::async_trait;
 
-// #[cfg(feature = "openai")]
+#[cfg(feature = "openai")]
 pub mod openai;
 
 #[async_trait]
-pub trait EmbeddingFunction: Send + Sync {
+pub trait EmbeddingFunction {
     async fn embed(&self, docs: Vec<String>) -> Result<Vec<Embedding>>;
 }
 
