@@ -14,9 +14,9 @@ struct EmbeddingData {
 }
 
 #[derive(Debug, Serialize)]
-struct EmbeddingRequest<'a> {
-    pub model: &'a str,
-    pub input: &'a str,
+struct EmbeddingRequest {
+    pub model: String,
+    pub input: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -75,12 +75,12 @@ impl OpenAIEmbeddings {
 
 #[async_trait]
 impl EmbeddingFunction for OpenAIEmbeddings {
-    async fn embed(&self, docs: &[&str]) -> anyhow::Result<Vec<Embedding>> {
+    async fn embed(&self, docs: Vec<String>) -> anyhow::Result<Vec<Embedding>> {
         let mut embeddings = Vec::new();
         for doc in docs {
             let req = EmbeddingRequest {
-                model: &self.config.model,
-                input: &doc,
+                model: self.config.model.clone(),
+                input: doc,
             };
             let res = self.post(req).await?;
             let body = serde_json::from_value::<EmbeddingResponse>(res)?;
@@ -108,13 +108,13 @@ mod tests {
         let openai_embeddings = OpenAIEmbeddings::new(Default::default());
 
         let docs = vec![
-            "Once upon a time there was a frog",
-            "Once upon a time there was a cow",
-            "Once upon a time there was a wolverine",
+            "Once upon a time there was a frog".to_string(),
+            "Once upon a time there was a cow".to_string(),
+            "Once upon a time there was a wolverine".to_string(),
         ];
 
         let collection_entries = CollectionEntries {
-            ids: vec!["test1", "test2", "test3"],
+            ids: vec!["test1".to_string(), "test2".to_string(), "test3".to_string()],
             metadatas: None,
             documents: Some(docs),
             embeddings: None,
