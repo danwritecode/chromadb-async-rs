@@ -6,7 +6,7 @@ use async_trait::async_trait;
 pub mod openai;
 
 #[async_trait]
-pub trait EmbeddingFunction {
+pub trait EmbeddingFunction: Send + Sync {
     async fn embed(&self, docs: Vec<String>) -> Result<Vec<Embedding>>;
 }
 
