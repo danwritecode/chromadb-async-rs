@@ -6,7 +6,7 @@ use std::{collections::HashSet, sync::Arc, vec};
 use super::{
     api::APIClientAsync,
     commons::{Documents, Embedding, Embeddings, Metadata, Metadatas, Result},
-    embeddings::EmbeddingFunction,
+    embeddings::openai::OpenAIEmbeddings,
 };
 
 /// A collection representation for interacting with the associated ChromaDB collection.
@@ -85,7 +85,7 @@ impl ChromaCollection {
     pub async fn add(
         &self,
         collection_entries: CollectionEntries,
-        embedding_function: Option<Box<dyn EmbeddingFunction>>,
+        embedding_function: Option<OpenAIEmbeddings>,
     ) -> Result<Value> {
         let collection_entries = validate(true, collection_entries, embedding_function).await?;
 
@@ -132,7 +132,7 @@ impl ChromaCollection {
     pub async fn upsert(
         &self,
         collection_entries: CollectionEntries,
-        embedding_function: Option<Box<dyn EmbeddingFunction>>,
+        embedding_function: Option<OpenAIEmbeddings>,
     ) -> Result<Value> {
         let collection_entries = validate(true, collection_entries, embedding_function).await?;
 
@@ -218,7 +218,7 @@ impl ChromaCollection {
     pub async fn update(
         &self,
         collection_entries: CollectionEntries,
-        embedding_function: Option<Box<dyn EmbeddingFunction>>,
+        embedding_function: Option<OpenAIEmbeddings>,
     ) -> Result<()> {
         let collection_entries = validate(false, collection_entries, embedding_function).await?;
 
@@ -268,7 +268,7 @@ impl ChromaCollection {
     pub async fn query(
         &self,
         query_options: QueryOptions,
-        embedding_function: Option<Box<dyn EmbeddingFunction>>,
+        embedding_function: Option<OpenAIEmbeddings>,
     ) -> Result<QueryResult> {
         let QueryOptions {
             mut query_embeddings,
@@ -307,7 +307,18 @@ impl ChromaCollection {
 
         let path = format!("/collections/{}/query", self.id);
         let response = self.api.post(path, Some(json_body)).await?;
-        let query_result = response.json::<QueryResult>().await?;
+        // println!("response: {:?}", response.text().await?);
+
+        let query_result = match response.json::<QueryResult>().await {
+            Ok(qr) => qr,
+            Err(e) => {
+                println!("error: {}", e);
+                panic!("errorered here")
+            }
+        };
+
+        println!("got query results: {:?}", query_result);
+
         Ok(query_result)
     }
 
@@ -409,7 +420,7 @@ pub struct CollectionEntries {
 async fn validate(
     require_embeddings_or_documents: bool,
     collection_entries: CollectionEntries,
-    embedding_function: Option<Box<dyn EmbeddingFunction>>,
+    embedding_function: Option<OpenAIEmbeddings>,
 ) -> Result<CollectionEntries> {
     let CollectionEntries {
         ids,
@@ -476,9 +487,7 @@ mod tests {
     use serde_json::json;
 
     use crate::v2::{
-        collection::{CollectionEntries, QueryOptions},
-        embeddings::MockEmbeddingProvider,
-        ChromaClient,
+        collection::{CollectionEntries, QueryOptions}, embeddings::openai::{OpenAIConfig, OpenAIEmbeddings}, ChromaClient
     };
 
     const TEST_COLLECTION: &str = "21-recipies-for-octopus";
@@ -531,9 +540,11 @@ mod tests {
             embeddings: None,
         };
 
+        let config = OpenAIConfig::default();
+
         let response = collection.add(
             invalid_collection_entries,
-            Some(Box::new(MockEmbeddingProvider)),
+            Some(OpenAIEmbeddings::new(config)),
         );
         assert!(
             response.await.is_err(),
@@ -549,9 +560,11 @@ mod tests {
             ]),
             embeddings: None,
         };
+
+        let config = OpenAIConfig::default();
         let response = collection.add(
             invalid_collection_entries,
-            Some(Box::new(MockEmbeddingProvider)),
+            Some(OpenAIEmbeddings::new(config)),
         );
         assert!(
             response.await.is_err(),
@@ -567,9 +580,11 @@ mod tests {
             ]),
             embeddings: None,
         };
+
+        let config = OpenAIConfig::default();
         let response = collection.add(
             valid_collection_entries,
-            Some(Box::new(MockEmbeddingProvider)),
+            Some(OpenAIEmbeddings::new(config)),
         );
         assert!(
             response.await.is_ok(),
@@ -585,9 +600,11 @@ mod tests {
             ]),
             embeddings: None,
         };
+
+        let config = OpenAIConfig::default();
         let response = collection.add(
             invalid_collection_entries,
-            Some(Box::new(MockEmbeddingProvider)),
+            Some(OpenAIEmbeddings::new(config)),
         );
         assert!(response.await.is_err(), "Empty IDs not allowed");
 
@@ -630,7 +647,9 @@ mod tests {
             ]),
             embeddings: None,
         };
-        let response = collection.add(collection_entries, Some(Box::new(MockEmbeddingProvider)));
+
+        let config = OpenAIConfig::default();
+        let response = collection.add(collection_entries, Some(OpenAIEmbeddings::new(config)));
         assert!(
             response.await.is_ok(),
             "Embeddings are computed by the embedding_function if embeddings are None and documents are provided"
@@ -653,9 +672,10 @@ mod tests {
             embeddings: None,
         };
 
+        let config = OpenAIConfig::default();
         let response = collection.upsert(
             invalid_collection_entries,
-            Some(Box::new(MockEmbeddingProvider)),
+            Some(OpenAIEmbeddings::new(config)),
         );
         assert!(
             response.await.is_err(),
@@ -671,9 +691,11 @@ mod tests {
             ]),
             embeddings: None,
         };
+
+        let config = OpenAIConfig::default();
         let response = collection.upsert(
             invalid_collection_entries,
-            Some(Box::new(MockEmbeddingProvider)),
+            Some(OpenAIEmbeddings::new(config)),
         );
         assert!(
             response.await.is_err(),
@@ -689,9 +711,11 @@ mod tests {
             ]),
             embeddings: None,
         };
+
+        let config = OpenAIConfig::default();
         let response = collection.upsert(
             valid_collection_entries,
-            Some(Box::new(MockEmbeddingProvider)),
+            Some(OpenAIEmbeddings::new(config)),
         );
         assert!(
             response.await.is_ok(),
@@ -707,9 +731,11 @@ mod tests {
             ]),
             embeddings: None,
         };
+
+        let config = OpenAIConfig::default();
         let response = collection.upsert(
             invalid_collection_entries,
-            Some(Box::new(MockEmbeddingProvider)),
+            Some(OpenAIEmbeddings::new(config)),
         );
         assert!(response.await.is_err(), "Empty IDs not allowed");
 
@@ -752,7 +778,9 @@ mod tests {
             ]),
             embeddings: None,
         };
-        let response = collection.upsert(collection_entries, Some(Box::new(MockEmbeddingProvider)));
+
+        let config = OpenAIConfig::default();
+        let response = collection.upsert(collection_entries, Some(OpenAIEmbeddings::new(config)));
         assert!(
             response.await.is_ok(),
             "Embeddings are computed by the embedding_function if embeddings are None and documents are provided"
@@ -775,9 +803,10 @@ mod tests {
             embeddings: None,
         };
 
+        let config = OpenAIConfig::default();
         let response = collection.update(
             valid_collection_entries,
-            Some(Box::new(MockEmbeddingProvider)),
+            Some(OpenAIEmbeddings::new(config)),
         ).await;
 
         println!("{:?}", response);
@@ -796,9 +825,11 @@ mod tests {
             ]),
             embeddings: None,
         };
+
+        let config = OpenAIConfig::default();
         let response = collection.update(
             invalid_collection_entries,
-            Some(Box::new(MockEmbeddingProvider)),
+            Some(OpenAIEmbeddings::new(config)),
         );
         assert!(
             response.await.is_err(),
@@ -814,9 +845,11 @@ mod tests {
             ]),
             embeddings: None,
         };
+
+        let config = OpenAIConfig::default();
         let response = collection.update(
             valid_collection_entries,
-            Some(Box::new(MockEmbeddingProvider)),
+            Some(OpenAIEmbeddings::new(config)),
         );
         assert!(
             response.await.is_ok(),
@@ -832,9 +865,11 @@ mod tests {
             ]),
             embeddings: None,
         };
+
+        let config = OpenAIConfig::default();
         let response = collection.update(
             invalid_collection_entries,
-            Some(Box::new(MockEmbeddingProvider)),
+            Some(OpenAIEmbeddings::new(config)),
         );
         assert!(response.await.is_err(), "Empty IDs not allowed");
 
@@ -877,7 +912,12 @@ mod tests {
             ]),
             embeddings: None,
         };
-        let response = collection.update(collection_entries, Some(Box::new(MockEmbeddingProvider)));
+
+        let config = OpenAIConfig::default();
+        let response = collection.update(
+            collection_entries, 
+            Some(OpenAIEmbeddings::new(config)),
+        );
         assert!(
             response.await.is_ok(),
             "Embeddings are computed by the embedding_function if embeddings are None and documents are provided"
@@ -919,7 +959,12 @@ mod tests {
             n_results: None,
             include: None,
         };
-        let query_result = collection.query(query, Some(Box::new(MockEmbeddingProvider)));
+
+        let config = OpenAIConfig::default();
+        let query_result = collection.query(
+            query, 
+            Some(OpenAIEmbeddings::new(config)),
+        );
         assert!(
             query_result.await.is_ok(),
             "query_embeddings will be computed from query_texts if embedding_function is provided"
@@ -930,13 +975,18 @@ mod tests {
                 "Writing tests help me find bugs".to_string(),
                 "Running them does not".to_string(),
             ]),
-            query_embeddings: Some(vec![vec![0.0_f32; 768], vec![0.0_f32; 768]]),
+            query_embeddings: Some(vec![vec![0.0_f32; 1536], vec![0.0_f32; 1536]]),
             where_metadata: None,
             where_document: None,
             n_results: None,
             include: None,
         };
-        let query_result = collection.query(query, Some(Box::new(MockEmbeddingProvider)));
+
+        let config = OpenAIConfig::default();
+        let query_result = collection.query(
+            query, 
+            Some(OpenAIEmbeddings::new(config)),
+        );
         assert!(
             query_result.await.is_err(),
             "Both query_embeddings and query_texts cannot be provided"
@@ -944,15 +994,18 @@ mod tests {
 
         let query = QueryOptions {
             query_texts: None,
-            query_embeddings: Some(vec![vec![0.0_f32; 768], vec![0.0_f32; 768]]),
+            query_embeddings: Some(vec![vec![0.0_f32; 1536], vec![0.0_f32; 1536]]),
             where_metadata: None,
             where_document: None,
             n_results: None,
             include: None,
         };
-        let query_result = collection.query(query, None);
+        let query_result = collection.query(query, None).await;
+
+        println!("{:?}", query_result);
+
         assert!(
-            query_result.await.is_ok(),
+            query_result.is_ok(),
             "Use provided query_embeddings if embedding_function is None"
         );
     }
@@ -975,9 +1028,10 @@ mod tests {
             embeddings: None,
         };
 
+        let config = OpenAIConfig::default();
         let response = collection.add(
             valid_collection_entries,
-            Some(Box::new(MockEmbeddingProvider)),
+            Some(OpenAIEmbeddings::new(config)),
         );
         assert!(response.await.is_ok());
 

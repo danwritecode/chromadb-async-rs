@@ -38,7 +38,7 @@
 //!# use serde_json::json;
 //!# async fn doc_client_create_collection(client: &ChromaClient) -> anyhow::Result<()> {
 //! // Get or create a collection with the given name and no metadata.
-//! let collection: ChromaCollection = client.get_or_create_collection("my_collection", None).await?;
+//! let collection: ChromaCollection = client.get_or_create_collection("my_collection".to_string(), None).await?;
 //!
 //! // Get the UUID of the collection
 //! let collection_uuid = collection.id();
@@ -46,12 +46,12 @@
 //!
 //! // Upsert some embeddings with documents and no metadata.
 //! let collection_entries = CollectionEntries {
-//!    ids: vec!["demo-id-1", "demo-id-2"],
+//!    ids: vec!["demo-id-1".to_string(), "demo-id-2".to_string()],
 //!    embeddings: Some(vec![vec![0.0_f32; 768], vec![0.0_f32; 768]]),
 //!    metadatas: None,
 //!    documents: Some(vec![
-//!        "Some document about 9 octopus recipies",
-//!        "Some other document about DCEU Superman Vs CW Superman"
+//!        "Some document about 9 octopus recipies".to_string(),
+//!        "Some other document about DCEU Superman Vs CW Superman".to_string()
 //!    ])
 //! };
 //!
@@ -119,12 +119,12 @@
 //! None).await?;
 //!
 //! let collection_entries = CollectionEntries {
-//!   ids: vec!["demo-id-1", "demo-id-2"],
+//!   ids: vec!["demo-id-1".to_string(), "demo-id-2".to_string()],
 //!   embeddings: None,
 //!   metadatas: None,
 //!   documents: Some(vec![
-//!            "Some document about 9 octopus recipies",
-//!            "Some other document about DCEU Superman Vs CW Superman"])
+//!            "Some document about 9 octopus recipies".to_string(),
+//!            "Some other document about DCEU Superman Vs CW Superman".to_string()])
 //! };
 //!
 //! // Use OpenAI embeddings
@@ -146,12 +146,12 @@
 //! None).await?;
 //!
 //! let collection_entries = CollectionEntries {
-//!   ids: vec!["demo-id-1", "demo-id-2"],
+//!   ids: vec!["demo-id-1".to_string(), "demo-id-2".to_string()],
 //!   embeddings: None,
 //!   metadatas: None,
 //!   documents: Some(vec![
-//!            "Some document about 9 octopus recipies",
-//!            "Some other document about DCEU Superman Vs CW Superman"])
+//!            "Some document about 9 octopus recipies".to_string(),
+//!            "Some other document about DCEU Superman Vs CW Superman".to_string()])
 //! };
 //!
 //! // Use SBERT embeddings

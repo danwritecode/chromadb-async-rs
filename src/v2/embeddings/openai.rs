@@ -1,8 +1,6 @@
-use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use super::EmbeddingFunction;
 use crate::v2::commons::Embedding;
 
 const OPENAI_EMBEDDINGS_ENDPOINT: &str = "https://api.openai.com/v1/embeddings";
@@ -71,11 +69,8 @@ impl OpenAIEmbeddings {
             }
         }
     }
-}
 
-#[async_trait]
-impl EmbeddingFunction for OpenAIEmbeddings {
-    async fn embed(&self, docs: Vec<String>) -> anyhow::Result<Vec<Embedding>> {
+    pub async fn embed(&self, docs: Vec<String>) -> anyhow::Result<Vec<Embedding>> {
         let mut embeddings = Vec::new();
         for doc in docs {
             let req = EmbeddingRequest {
@@ -121,7 +116,10 @@ mod tests {
         };
 
         collection
-            .upsert(collection_entries, Some(Box::new(openai_embeddings)))
+            .upsert(
+                collection_entries, 
+                Some(openai_embeddings),
+            )
             .await
             .unwrap();
     }
